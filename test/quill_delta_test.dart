@@ -1342,6 +1342,58 @@ void main() {
         final expected = Delta()..retain(6)..insert('\n', {'index': 1.5});
         expect(a.diff(b), expected);
       });
+
+      test('replace an emoji with another emoji, where the first code unit of both is the same', () {
+        final a = Delta()..insert('\ud83d\udd35');
+        final b = Delta()..insert('\ud83d\udd34');
+        final expected = Delta()
+          ..insert('\ud83d\udd34')
+          ..delete(2);
+
+        expect(a.diff(b), expected);
+      });
+
+      test('replace an emoji with another emoji, where both code units are different', () {
+        final a = Delta()..insert('\ud83d\udc15');
+        final b = Delta()..insert('\ud83d\udd34');
+        final expected = Delta()
+          ..insert('\ud83d\udd34')
+          ..delete(2);
+
+        expect(a.diff(b), expected);
+      });
+
+      test('replace an emoji with another emoji with text before and after', () {
+        final a = Delta()..insert('ABC\ud83d\udd35123');
+        final b = Delta()..insert('ABC\ud83d\udd34123');
+        final expected = Delta()
+        ..retain(3)
+          ..insert('\ud83d\udd34')
+          ..delete(2);
+
+        expect(a.diff(b), expected);
+      });
+
+      test('replace an emoji with another emoji with text at the end of a sentence', () {
+        final a = Delta()..insert('ABC\ud83d\udd35');
+        final b = Delta()..insert('ABC\ud83d\udd34');
+        final expected = Delta()
+          ..retain(3)
+          ..insert('\ud83d\udd34')
+          ..delete(2);
+
+        expect(a.diff(b), expected);
+      });
+
+      test('replace an emoji with another emoji with text at the beginning of a sentence', () {
+        final a = Delta()..insert('\ud83d\udd35ABC');
+        final b = Delta()..insert('\ud83d\udd34ABC');
+        final expected = Delta()
+          ..insert('\ud83d\udd34')
+          ..delete(2);
+
+        expect(a.diff(b), expected);
+      });
     });
   });
 
