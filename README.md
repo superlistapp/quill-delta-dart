@@ -1,44 +1,17 @@
-[![Build Status](https://www.travis-ci.com/pulyaevskiy/quill-delta-dart.svg?branch=master)](https://www.travis-ci.com/pulyaevskiy/quill-delta-dart) [![codecov](https://codecov.io/gh/pulyaevskiy/quill-delta-dart/branch/master/graph/badge.svg)](https://codecov.io/gh/pulyaevskiy/quill-delta-dart) [![Pub](https://img.shields.io/pub/v/quill_delta.svg)](https://pub.dev/packages/quill_delta)
+# quill_delta
+The Superlist fork of the great [quill_delta Dart package](https://github.com/pulyaevskiy/quill-delta-dart).
 
-Implementation of Quill editor Delta format in Dart. Refer to official
-[documentation][] for more details.
+## Why?
+We're using [the Quill.js Delta format](https://quilljs.com/docs/delta/) on the client and the server to express documents and changes to documents.
 
-[documentation]: https://quilljs.com/docs/delta/
+This format makes it easier for us to do operational transformation on our documents, so that multiple users can make changes on the same document simultaneously.
+The Dart package (which is a port of the original Quill Delta Javascript library) has made it neat to implement this functionality.
 
-## Usage
+However, the `quill_delta` Dart package has not been updated for a while.
+We had a couple of issues with it that needed fixing, namely:
+1. The output of the `diff()` function did not match the output of the `diff` function in the original JS library - [see this PR for more context](https://github.com/pulyaevskiy/quill-delta-dart/pull/27).
+2. The `diff()` function was "splitting emojis in half" sometimes. For example, `insert('🔵').diff(insert('🔴'))` returned a partial emoji which really freaked out our document editing experience.
 
-```dart
-import 'package:quill_delta/quill_delta.dart';
+Additionally, we're most likely to need some other functionality that is out of scope of the Quill.js Delta format in the future.
 
-void main() {
-  var doc = new Delta()..insert('Hello world', {'h': '1'});
-  var change = new Delta()
-    ..retain(6)
-    ..delete(5)
-    ..insert('Earth');
-  var result = doc.compose(change);
-  print('Original document:\n$doc\n');
-  print('Change:\n$change\n');
-  print('Updated document:\n$result\n');
-
-  /// Prints:
-  ///
-  ///     Original document:
-  ///     ins⟨Hello world⟩ + {h: 1}
-  ///
-  ///     Change:
-  ///     ret⟨6⟩
-  ///     ins⟨Earth⟩
-  ///     del⟨5⟩
-  ///
-  ///     Updated document:
-  ///     ins⟨Hello ⟩ + {h: 1}
-  ///     ins⟨Earth⟩
-}
-```
-
-## Features and bugs
-
-Please file feature requests and bugs at the [issue tracker][tracker].
-
-[tracker]: https://github.com/pulyaevskiy/quill-delta-dart/issues
+As such, we've forked the dart package so that we have better control on features & bugfixes that Superlist needs.
