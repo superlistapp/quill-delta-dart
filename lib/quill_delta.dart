@@ -283,7 +283,7 @@ class Delta {
   }
 
   /// Returns list of operations in this delta.
-  List<Operation> toList() => List.from(_operations);
+  List<Operation> toList() => _operations; // List.from(_operations);
 
   /// Returns JSON-serializable version of this delta.
   List toJson() => toList();
@@ -799,4 +799,23 @@ class DeltaIterator {
     }
     return op;
   }
+}
+
+extension DeltaUnsafe on Delta {
+  /// Creates new [Delta] from list of [operations]. Caller must ensure that
+  /// operations are valid inserts.
+  static Delta fromOperationsUnsafe(List<Operation> operations) {
+    assert(operations.every((op) => op.isInsert));
+    return Delta._(operations);
+  }
+
+  /// Returns list of operations in this delta.
+  /// Caller must not modify the list.
+  List<Operation> get operationsUnsafe => _operations;
+}
+
+extension OperationUnsafe on Operation {
+  /// Returns attributes of this operation.
+  /// Caller must not modify the map.
+  Map<String, dynamic>? get attributesUnsafe => _attributes;
 }
