@@ -800,3 +800,20 @@ class DeltaIterator {
     return op;
   }
 }
+
+extension DeltaUnsafe on Delta {
+  /// Creates new [Delta] from list of [operations].
+  static Delta fromOperationsUnsafe(List<Operation> operations) {
+    return Delta._(operations);
+  }
+
+  /// Returns list of operations in this delta.
+  /// Caller must not modify the list.
+  List<Operation> get operationsUnsafe => _operations;
+}
+
+extension OperationUnsafe on Operation {
+  /// Returns attributes of this operation.
+  /// Caller must not modify the map.
+  Map<String, dynamic>? get attributesUnsafe => _attributes;
+}
