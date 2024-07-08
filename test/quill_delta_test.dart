@@ -1145,6 +1145,22 @@ void main() {
     });
 
     group('diff', () {
+      test('surrogate pair addition', () {
+        final a = Delta()..insert('🟩🟥');
+        final b = Delta()..insert('🟩🟧🟥');
+
+        final expected = Delta()..retain(2)..insert('🟧');
+        expect(a.diff(b), expected);
+      });
+
+      test('surrogate pair deletion', () {
+        final a = Delta()..insert('🟩🟧🟥');
+        final b = Delta()..insert('🟩🟥');
+
+        final expected = Delta()..retain(2)..delete(2);
+        expect(a.diff(b), expected);
+      });
+
       test('insert', () {
         final a = Delta()..insert('A');
         final b = Delta()..insert('AB');
