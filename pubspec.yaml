@@ -14,7 +14,7 @@ dependencies:
   diff_match_patch:
     git:
       url: https://github.com/superlistapp/diff-match-patch.git
-      ref: b756f70a5bb2a461a7e0f04aef28232d7f1a58f3
+      ref: 18a741c598300be06d96d91422279e607dc447c6
 
 dev_dependencies:
   coverage: ^1.0.0
