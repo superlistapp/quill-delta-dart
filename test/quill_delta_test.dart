@@ -316,6 +316,16 @@ void main() {
         expect(base.compose(delta).compose(inverted), base);
       });
 
+      test('invert a change with an empty base', () {
+        final delta = Delta()..insert('abc');
+        final base = Delta();
+        final expected = Delta()..delete(3);
+
+        final inverted = delta.invert(base);
+        expect(expected, inverted);
+        expect(base.compose(delta).compose(inverted), base);
+      });
+
       test('combined', () {
         var delta = Delta()
           ..retain(2)
