@@ -622,8 +622,6 @@ class Delta {
   /// [base]. This is an equivalent of "undo" operation on deltas.
   Delta invert(Delta base) {
     final inverted = Delta();
-    if (base.isEmpty) return inverted;
-
     var baseIndex = 0;
     for (final op in _operations) {
       if (op.isInsert) {
