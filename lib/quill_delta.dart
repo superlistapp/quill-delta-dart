@@ -150,7 +150,28 @@ class Operation {
 
   /// Returns `true` if [other] operation has the same attributes as this one.
   bool hasSameAttributes(Operation other) {
-    return _attributeEquality.equals(_attributes, other._attributes);
+    final attributes = _attributes;
+    final otherAttributes = other._attributes;
+    if (identical(attributes, otherAttributes)) return true;
+    if (attributes != null && otherAttributes != null) {
+      if (attributes.length != otherAttributes.length) return false;
+      var hasCollectionValues = false;
+      for (final entry in attributes.entries) {
+        final value = entry.value;
+        final otherValue = otherAttributes[entry.key];
+        if (value is Iterable ||
+            value is Map ||
+            otherValue is Iterable ||
+            otherValue is Map) {
+          hasCollectionValues = true;
+        } else if (value != otherValue ||
+            (value == null && !otherAttributes.containsKey(entry.key))) {
+          return false;
+        }
+      }
+      if (!hasCollectionValues) return true;
+    }
+    return _attributeEquality.equals(attributes, otherAttributes);
   }
 
   @override

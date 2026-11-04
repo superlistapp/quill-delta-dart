@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:quill_delta/quill_delta.dart';
 import 'package:test/test.dart';
 
@@ -92,7 +93,58 @@ void _expectSameAsReference(Delta a, Delta b) {
   );
 }
 
+const _attributeValues = <Object?>[
+  null,
+  true,
+  false,
+  1,
+  1.0,
+  'a',
+  'b',
+  [1, 2],
+  [2, 1],
+  {'x': 1},
+  {'x': null},
+];
+
+Map<String, dynamic>? _randomAttributes(Random random) {
+  if (random.nextInt(6) == 0) return null;
+  return {
+    for (final key in ['k1', 'k2', 'k3'])
+      if (random.nextBool())
+        key: _attributeValues[random.nextInt(_attributeValues.length)],
+  };
+}
+
 void main() {
+  group('Operation.hasSameAttributes', () {
+    test('matches deep equality for random attributes', () {
+      const deepEquality = DeepCollectionEquality();
+      final random = Random(7805);
+      for (var i = 0; i < 20000; i++) {
+        final attributes = _randomAttributes(random);
+        final otherAttributes = random.nextInt(4) == 0
+            ? (attributes == null ? null : Map.of(attributes))
+            : _randomAttributes(random);
+
+        expect(
+          Operation.insert('a', attributes)
+              .hasSameAttributes(Operation.insert('a', otherAttributes)),
+          deepEquality.equals(attributes, otherAttributes),
+          reason: '$attributes vs $otherAttributes',
+        );
+      }
+    });
+
+    test('distinguishes a null value from a missing key', () {
+      expect(
+        Operation.insert('a', {'k1': null, 'k2': 1})
+            .hasSameAttributes(Operation.insert('a', {'k2': 1, 'k3': null})),
+        isFalse,
+      );
+    });
+  });
+
   group('Delta.compose', () {
     test('reuses whole operations covered by a plain retain', () {
       final document = Delta()
