@@ -150,7 +150,28 @@ class Operation {
 
   /// Returns `true` if [other] operation has the same attributes as this one.
   bool hasSameAttributes(Operation other) {
-    return _attributeEquality.equals(_attributes, other._attributes);
+    final attributes = _attributes;
+    final otherAttributes = other._attributes;
+    if (identical(attributes, otherAttributes)) return true;
+    if (attributes != null && otherAttributes != null) {
+      if (attributes.length != otherAttributes.length) return false;
+      var hasCollectionValues = false;
+      for (final entry in attributes.entries) {
+        final value = entry.value;
+        final otherValue = otherAttributes[entry.key];
+        if (value is Iterable ||
+            value is Map ||
+            otherValue is Iterable ||
+            otherValue is Map) {
+          hasCollectionValues = true;
+        } else if (value != otherValue ||
+            (value == null && !otherAttributes.containsKey(entry.key))) {
+          return false;
+        }
+      }
+      if (!hasCollectionValues) return true;
+    }
+    return _attributeEquality.equals(attributes, otherAttributes);
   }
 
   @override
@@ -419,6 +440,18 @@ class Delta {
     if (otherIter.isNextInsert) return otherIter.next();
     if (thisIter.isNextDelete) return thisIter.next();
 
+    // A plain retain over a whole operation leaves it unchanged, so reuse it
+    // instead of rebuilding it and copying its attributes.
+    final wholeOp = thisIter._peekWholeOperation();
+    if (wholeOp != null &&
+        wholeOp.length <= otherIter.peekLength() &&
+        otherIter._isNextPlainRetain &&
+        _composesToItself(wholeOp)) {
+      thisIter._advance(wholeOp.length);
+      otherIter._advance(wholeOp.length);
+      return wholeOp;
+    }
+
     final length = math.min(thisIter.peekLength(), otherIter.peekLength());
     final thisOp = thisIter.next(length);
     final otherOp = otherIter.next(length);
@@ -445,6 +478,15 @@ class Delta {
       // otherOp(delete) + thisOp(insert) => null
     }
     return null;
+  }
+
+  /// Whether composing [operation] with a plain retain returns an equal
+  /// operation. [composeAttributes] drops `null` values and turns empty
+  /// attributes into `null`, so such operations must be rebuilt.
+  static bool _composesToItself(Operation operation) {
+    final attributes = operation._attributes;
+    return attributes == null ||
+        (attributes.isNotEmpty && !attributes.containsValue(null));
   }
 
   /// Composes this delta with [other] and returns new [Delta].
@@ -781,6 +823,37 @@ class DeltaIterator {
       return Operation._(opKey, opActualLength, opData, opAttributes);
     }
     return Operation.retain(length);
+  }
+
+  /// Returns the next operation if none of it has been consumed yet,
+  /// otherwise `null`.
+  Operation? _peekWholeOperation() {
+    if (_offset != 0 || _index >= delta.length) return null;
+    return delta._operations[_index];
+  }
+
+  /// Whether the next operation is a retain without attributes. Past the end
+  /// of the delta this is `true`, since [next] then returns a plain retain.
+  bool get _isNextPlainRetain {
+    if (_index >= delta.length) return true;
+    final operation = delta._operations[_index];
+    return operation.isRetain && operation.isPlain;
+  }
+
+  /// Consumes [length] characters of the next operation without building an
+  /// [Operation]. [length] must not exceed [peekLength].
+  void _advance(int length) {
+    if (_modificationCount != delta._modificationCount) {
+      throw ConcurrentModificationError(delta);
+    }
+    if (_index >= delta.length) return;
+    assert(length <= peekLength());
+    if (length == peekLength()) {
+      _index++;
+      _offset = 0;
+    } else {
+      _offset += length;
+    }
   }
 
   /// Skips [length] characters in source delta.
